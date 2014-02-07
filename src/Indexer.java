@@ -2,7 +2,6 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -17,11 +16,8 @@ import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.apache.lucene.store.SimpleFSDirectory;
-import org.apache.lucene.util.PagedBytes.Reader;
 import org.apache.lucene.util.Version;
 
 public class Indexer {
@@ -38,13 +34,16 @@ public class Indexer {
 	// Index object
 	Iterable<String> indexMap;
 	
-	// Map data
+	public Indexer() {
+		this.analyzer = new StandardAnalyzer(LUCENE_VERSION);
+	}
 	
+	/*
 	public Indexer(IndexWriter indexWriter) {
 		this.indexWriter = indexWriter;
 	}
 	
-	public Indexer(Analyzer analyzer/*, Tokens tokens*/) {
+	public Indexer(Analyzer analyzer/ *, Tokens tokens* /) {
 		this.analyzer = analyzer;
 	}
 
@@ -54,24 +53,22 @@ public class Indexer {
 		  // access the terms for this field
 		  //index.add(t);
 		}
-		
-		//IndexWriter indexWriter = new IndexWriter("index", new StandardAnalyzer(), true);
 	}
 
 	public Indexer(Iterable tokens) {
 		
 	}
+	*/
 	
-	public Indexer( /* some other input format */ ) {
-		// convert to Iterable object
-	}
-	
-	public void createWriter() throws CorruptIndexException, LockObtainFailedException, IOException {
+	public void createIndexer() throws CorruptIndexException, LockObtainFailedException, IOException {
 		
-		boolean recreateIndexIfExists = true;
-		//Directory dir = FSDirectory.open(new File(INDEX_DIRECTORY));
+		//Directory dir = FSDirectory.open(new File(OUTPUT_INDEX_DIRECTORY));
 		SimpleFSDirectory indexDir = new SimpleFSDirectory(new File(OUTPUT_INDEX_DIRECTORY));
 		  
+		
+		// Q: 	see here, im passing the analyzer to the indexWriter constructor (thats what evan was talking about)
+		//		doesnt that mean that this analyzer will be used downstairs when adding fields to the doc?
+		//		and this will be the preprocessing steps of removing the stop words and everything?
 		IndexWriterConfig indexConfig;
 		indexConfig 	= new IndexWriterConfig(LUCENE_VERSION, analyzer); 
 		indexWriter 	= new IndexWriter(indexDir, indexConfig);
@@ -81,7 +78,7 @@ public class Indexer {
 		File 	file 	= files[0];				// Only one file there
 		
 		InputStream    	fis = new FileInputStream(file);
-		BufferedReader 	br 	= new BufferedReader(new InputStreamReader(fis, Charset.forName("UTF-8")));
+		BufferedReader 	br	= new BufferedReader(new InputStreamReader(fis, Charset.forName("UTF-8")));
 		String         	line;
 	
 		while ( (line = br.readLine()) != null ) {
@@ -104,30 +101,6 @@ public class Indexer {
 		indexWriter.close();
 	}
 	
-	// Back when i thought we need to calculate index
-	/*
-	public boolean createIndex() {
-		// addField (new TextField)
-		// addDocument()
-		// commit()
-		
-		return false;
-	}
-	
-	public boolean addToIndex() {
-		
-		// editDocument() ??
-		// commit()
-		
-		return false;
-	}
-	
-	public boolean returnIndex() {
-		// getCommitData()
-		return false;
-	}
-	
-	*/
 	
 	public boolean getTermIndex(String token) {
 		// getCommitData()
@@ -135,24 +108,4 @@ public class Indexer {
 		return false;
 	}
 
-	/*
-	public boolean setTermIndex(String token) {
-	
-		return false;
-	}
-	
-	///*
-	private double calculateIndex(String token) {
-		// does lucene do this?
-		// for each word, loop through twitter docs and calulcate tf
-		// when done calculate idf
-		// weight of a token is: TF * IDF
-		
-		// Do a second pass over all documents: keep a list or hashtable with all document id-s, and for each document determine the length of its vector.
-		
-		return 0.0;
-	}
-	*/
-	 
 }
-
