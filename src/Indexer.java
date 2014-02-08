@@ -1,4 +1,10 @@
 
+/**
+ * @author Abdel Gomez-Perez 6201022
+ * @author Naglaa Eid 6177022
+ *
+ */
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;

@@ -12,9 +12,9 @@ import java.util.*;
  */
 
 public class Preprocessing {
-	Map<Integer, ArrayList<String>> dictionary;
+	//Map<Integer, ArrayList<String>> dictionary;
 	
 	public Preprocessing() {
-		this.dictionary = new HashMap<Integer, ArrayList<String>>();
+		//this.dictionary = new HashMap<Integer, ArrayList<String>>();
 	}
 }
