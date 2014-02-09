@@ -113,22 +113,21 @@ public class Indexer {
 
 			// Add fields to the documents
 			doc.add( new StringField("documentId", documentId, Field.Store.YES) ); 
-
 			doc.add( new TextField	("twitterMsg", twitterMsg, Field.Store.YES) );
 
 			// Add new document to the indexer 
 			// Or update if already exists with that tweet ID
 			indexWriter.updateDocument(new Term("documentId", documentId), doc);
 		}
-		
+
 		// Initialize indexReader when output directory is still open
 		indexReader  = DirectoryReader.open(outputDir);
-				
+
 		// Close resources
 		indexWriter.close();
 		outputDir.close();		
 		br.close();
-		
+
 		// Status report
 		System.out.println("Index created with " + indexReader.numDocs() + " documents");
 	}
@@ -142,7 +141,7 @@ public class Indexer {
 	 * Step 3:
 	 * 		RETRIEVAL AND RANKING
 	 */
-	
+
 	public void searchQueries() throws IOException, ParseException {
 		System.out.println();
 		System.out.println("Searching XML Queries");
@@ -170,18 +169,11 @@ public class Indexer {
 		
 		// TODO CONSTANT_SCORE_*_REWRITE_DEFAULT gets scores higher than 1
 		
-		//Query query = queryParser.parse(searchString); 
-		//Query query = queryParser.parse("*"+searchString);		
-		//Query query = queryParser.parse(searchString+"*");
 		Query query = queryParser.parse("*"+searchString+"*");
 		//Query newQuery = query.rewrite(indexReader);
-		
+
 		//Query query = new WildcardQuery(new Term(searchField, "*"+searchString+"*"));
-		
-		//Query query = new FuzzyQuery(new Term(searchField, searchString));
-		
-		//Query query = new TermQuery(new Term(searchField, searchString+"*"));
-		
+
 		// TODO scores changed from 4.something to 0~0.5 when added wildcard
 		//		run trekeval then fix here
 		// TODO also check if wildcard used on all terms
@@ -239,11 +231,11 @@ public class Indexer {
         TermsEnum 	iterator = terms.iterator(null);
         BytesRef 	byteRef;
         
-        while( (byteRef = iterator.next()) != null ) { // && numTokens < 100 ) {
+        while( (byteRef = iterator.next()) != null ) { 
             String term = new String(byteRef.bytes, byteRef.offset, byteRef.length);
             
             // This gets exactly 100 tokens for our particular input
-            if ( numTokens % 800 == 0 )
+            if ( numTokens % 980 == 0 )
             	System.out.print(term + " (" + iterator.docFreq() + ")\t");
             
             if ( numTokens % 5000 == 0)
