@@ -1,24 +1,26 @@
+import java.util.ArrayList;
+import java.util.Map.Entry;
+
 public class TwitterIR {
 
 	public static void main (String [] args) {
 		Indexer indexer = new Indexer();
 		XMLParser parser = new XMLParser();
 		
-		parser.getQueries();
+		ArrayList<Entry<String, String>> queries = parser.getQueries();
 		
 		try {
 			// Preprocessing and indexing (steps 1 + 2)
 			indexer.init();
 
 			// Retrieval and ranking (step 3)
-			indexer.searchQueries();
+			indexer.searchQueries(queries);
 						
 			// Results file (step 4)
 			// TODO
 			
 			// Verify indexing and report
-			indexer.indexStats();
-			indexer.getTokenFromIndex("http");
+//			indexer.indexStats();
 			
 		} catch (Exception e) {
 			e.printStackTrace();

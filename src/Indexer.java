@@ -7,9 +7,16 @@
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -45,6 +52,7 @@ public class Indexer {
 	private static final String		STOP_WORDS_PATH 	= "../collection/StopWords.txt";
 	private static final String 	INPUT_INDEX_PATH 	= "../collection/Trec_microblog11.txt";
 	private static final String 	OUTPUT_INDEX_PATH 	= "../index";
+	private static final String 	OUTPUT_RESULTS_PATH	= "../queries/results.txt";
 	
 	// Index manipulation objects
 	private IndexWriter 	indexWriter;
@@ -53,7 +61,10 @@ public class Indexer {
 	
 	// Preprocessing analyzer
 	private Analyzer 		analyzer;
-
+	
+	// File resources
+	private PrintWriter 	resultsWriter;
+	
 	public Indexer() {}
 
 	/*
@@ -108,16 +119,16 @@ public class Indexer {
 
 			// Parse input file
 			String[]	parts 		= line.split("\t");
-			String		documentId 	= parts[0];
-			String 		twitterMsg 	= parts[1];
+			String		tweetId 	= parts[0];
+			String 		message 	= parts[1];
 
 			// Add fields to the documents
-			doc.add( new StringField("documentId", documentId, Field.Store.YES) ); 
-			doc.add( new TextField	("twitterMsg", twitterMsg, Field.Store.YES) );
+			doc.add( new StringField("tweetId", tweetId, Field.Store.YES) ); 
+			doc.add( new TextField	("message", message, Field.Store.YES) );
 
 			// Add new document to the indexer 
 			// Or update if already exists with that tweet ID
-			indexWriter.updateDocument(new Term("documentId", documentId), doc);
+			indexWriter.updateDocument(new Term("tweetId", tweetId), doc);
 		}
 
 		// Initialize indexReader when output directory is still open
@@ -131,82 +142,107 @@ public class Indexer {
 		// Status report
 		System.out.println("Index created with " + indexReader.numDocs() + " documents");
 	}
-
-	public void searchInit() {
-		indexSearcher = new IndexSearcher(indexReader);
-	}
-	
 	
 	/*
 	 * Step 3:
 	 * 		RETRIEVAL AND RANKING
 	 */
+	
+	public void searchInit() {
+		indexSearcher = new IndexSearcher(indexReader);
+	}
 
-	public void searchQueries() throws IOException, ParseException {
+	public void searchQueries(ArrayList<Entry<String, String>> queries) throws IOException, ParseException {
 		System.out.println();
 		System.out.println("Searching XML Queries");
 		System.out.println("---------------------");
 		
-		// TODO parse XML then pass to searcher here
-		//searchIndex("vegas"); 		// should return 58
-		//searchIndex("http");  		// should return ~27,500
-		//searchIndex("BBC world"); 	// should be ~1.6k
-		searchIndex("0.0mm");			// 2 retrieved with 1.0 score ?? TODO check manually
-		searchIndex("bit.ly");			// 1 retrieved with 1.0 score ?? TODO check manually
+		resultsInit();
+		
+		// TODO for testing until phrasal search is complete
+		Map<String, String> qs = new HashMap<String, String>();
+		qs.put("1", "BBC World Service staff cuts");
+		qs.put("49", "carbon monoxide law");
+		
+		for (Map.Entry<String, String> q : qs.entrySet()) {
+
+//		for (Entry<String, String> q : queries) {
+		    String 	queryName 	= q.getKey();	
+		    String	queryText	= q.getValue();
+			String[][] results 	= searchIndex(queryText);
+			
+			resultsAppend(queryName, results, "XMLQueriesRun");
+		}
+		
+		resultsWriter.close();
 	}
 	
-	public TopDocs searchIndex(String searchString) throws IOException, ParseException {
+	public String[][] searchIndex(String searchString) throws IOException, ParseException {
 		// Status report
 		System.out.println("Searching for '" + searchString + "'...");
 		
-        String searchField = "twitterMsg";
-		
+		// Init
+        String searchField 	= "message";
+        
+        // Create QueryParser object to take XML elements
         QueryParser queryParser = new QueryParser(LUCENE_VERSION, searchField, this.analyzer);
+        
         // To allow searching for tokens that contains the search query
 		queryParser.setAllowLeadingWildcard(true);
+		
 		// To avoid getting a constant score of 1.0 from using wildcards
-		queryParser.setMultiTermRewriteMethod(MultiTermQuery.CONSTANT_SCORE_AUTO_REWRITE_DEFAULT);
+		queryParser.setMultiTermRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE); 
 		
-		// TODO CONSTANT_SCORE_*_REWRITE_DEFAULT gets scores higher than 1
-		
+		// Wraps every term in the query with wildcards
 		Query query = queryParser.parse("*"+searchString+"*");
-		//Query newQuery = query.rewrite(indexReader);
 
-		//Query query = new WildcardQuery(new Term(searchField, "*"+searchString+"*"));
-
-		// TODO scores changed from 4.something to 0~0.5 when added wildcard
-		//		run trekeval then fix here
-		// TODO also check if wildcard used on all terms
-		TopDocs results = indexSearcher.search(query, indexReader.numDocs());
-		ScoreDoc[] hits = results.scoreDocs;	    
-	    int numTotalHits = results.totalHits;
+		// TODO scores changed from 4.something to 0~0.5 when added wildcard - run trekeval to check this
+		// Run query and get result stats
+		TopDocs 	results = indexSearcher.search(query, indexReader.numDocs());
+		ScoreDoc[] 	hits 	= results.scoreDocs;	    
+	    int			numHits = results.totalHits;
+	    String[][]	hitsInfo = new String[ Math.min(numHits, 1000) ][3];
 	    
-//		Iterator<TopDocs> it = results.iterator();
-//		while (it.hasNext()) {
-//			Hit hit = it.next();
-//			Document document = hit.getDocument();
-//			String msg = document.get(searchField);
-//			System.out.println("Hit: " + msg);
-//		}
-	    
-	    for (int i = 0; i < hits.length; i++)
-	    {
-	    	if ( i == 0 || i == hits.length-1 ) {
-	    		System.out.println("doc="+hits[i].doc+" score="+hits[i].score);
-	
-	    		Document doc = indexSearcher.doc(hits[i].doc);
-	          	String twitterMsg = doc.get("twitterMsg");
-	          
-	          	System.out.println((i+1) + ". " + twitterMsg);
-	    	}
+	    // Gather doc and score information for a max of 1000 results
+	    for (int i = 0; i < hitsInfo.length; i++) { //=Math.max(1, hits.length-1))
+	    	ScoreDoc hit = hits[i];
+	    	
+    		Document doc = indexSearcher.doc(hit.doc);
+    		String tweetId  = doc.get("tweetId");
+//	    		String message 	= doc.get("message");
+          	String rank 	= Integer.toString(i+1);
+          	String score	= Float.toString(hit.score);
+      		
+      		hitsInfo[i][0] = tweetId;
+      		hitsInfo[i][1] = rank;
+      		hitsInfo[i][2] = score;
+          		
+//	    	if ( i == 0 || i == hits.length-1 ) {
+//	    		System.out.print((i==0) ? "First " : "Last " + " match \t-\t");   		
+//	    		System.out.println("doc="+hit.doc+" score="+hit.score);
+//	    		System.out.println(rank + ". " + doc.get("message"));
+//	    	}
 	    }
 	    
 	 	// Status report
-	    System.out.println("Query found with " + numTotalHits + " total matching documents");
+	    System.out.println("Query found with " + numHits + " total matching documents");
 		          
 	    // Needed for creating results file
-	    return results;
+	    return hitsInfo;
     }
+	
+	public void resultsInit() throws FileNotFoundException, UnsupportedEncodingException {
+		resultsWriter = new PrintWriter(OUTPUT_RESULTS_PATH, "UTF-8");
+		resultsWriter.println("topic_id \t Q0 \t docno \t rank \t score \t tag");
+	}
+
+	public void resultsAppend(String queryNum, String [][] queryResults, String tag) {
+		
+		for ( String[] doc: queryResults ) {
+			resultsWriter.println(queryNum + " \t Q0 \t " + doc[0] + " \t " + doc[1] + " \t " + doc[2] + " \t " + tag);
+		}
+		
+	}
 	
 	/*
 	 * REPORTING
@@ -227,7 +263,7 @@ public class Indexer {
 		int numTokens = 0;
 
 		Fields 		fields 	 = MultiFields.getFields(indexReader);
-        Terms 		terms 	 = fields.terms("twitterMsg");
+        Terms 		terms 	 = fields.terms("message");
         TermsEnum 	iterator = terms.iterator(null);
         BytesRef 	byteRef;
         
@@ -252,7 +288,7 @@ public class Indexer {
 	public boolean getTokenFromIndex(String token) throws IOException {
 
 		Fields 		fields 	 = MultiFields.getFields(indexReader);
-        Terms 		terms 	 = fields.terms("twitterMsg");
+        Terms 		terms 	 = fields.terms("message");
         TermsEnum 	iterator = terms.iterator(null);
         BytesRef 	byteRef;
         
