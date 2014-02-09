@@ -2,6 +2,10 @@ public class TwitterIR {
 
 	public static void main (String [] args) {
 		Indexer indexer = new Indexer();
+		XMLParser parser = new XMLParser();
+		
+		parser.getQueries();
+		
 		try {
 			// Preprocessing and indexing (steps 1 + 2)
 			indexer.init();
