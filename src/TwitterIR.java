@@ -3,15 +3,19 @@ public class TwitterIR {
 	public static void main (String [] args) {
 		Indexer indexer = new Indexer();
 		try {
-			indexer.analyzerInit();
-			indexer.indexInit();
+			// Preprocessing and indexing (steps 1 + 2)
+			indexer.init();
+
+			// Retrieval and ranking (step 3)
+			indexer.searchQueries();
+						
+			// Results file (step 4)
+			// TODO
 			
-			indexer.readerInit();
-			indexer.searchInit();
-			
+			// Verify indexing and report
 			indexer.indexStats();
+			indexer.getTokenFromIndex("http");
 			
-			indexer.searchIndex("vegas");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
