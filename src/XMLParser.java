@@ -14,7 +14,6 @@ import javax.xml.parsers.ParserConfigurationException;
  
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 public class XMLParser {
@@ -54,9 +53,12 @@ public class XMLParser {
             NodeList nameList = doc.getElementsByTagName("num");
             
             for (int i = 0; i < titleList.getLength(); i++) {
-                Node title = titleList.item(i);
-                Node name = nameList.item(i);
-                queries.add(new AbstractMap.SimpleEntry<String, String>(name.getTextContent(), title.getTextContent()));
+                String title = titleList.item(i).getTextContent();
+                String name = nameList.item(i).getTextContent();
+                title = title.trim();
+                name = name.trim();
+                name = name.replaceFirst("^[a-zA-Z]+: [a-zA-Z]+0+(?!$)", "");
+                queries.add(new AbstractMap.SimpleEntry<String, String>(name, title));
             }
         } catch (IOException e) {
             e.printStackTrace();
