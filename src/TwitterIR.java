@@ -4,11 +4,7 @@ public class TwitterIR {
 		Indexer indexer = new Indexer();
 		XMLParser parser = new XMLParser();
 		
-		try {
-		    parser.createXMLFromQueriesFile();
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
+		parser.getQueries();
 		
 		try {
 			// Preprocessing and indexing (steps 1 + 2)

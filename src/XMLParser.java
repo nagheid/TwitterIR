@@ -1,20 +1,28 @@
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
  
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
+
 public class XMLParser {
  
     DocumentBuilderFactory docFactory;
     DocumentBuilder docBuilder;
+    ArrayList<Entry<String,String>> queries;
+    
     private static final String QUERIES_PATH = "../queries/topics_MB1-49.txt";
     private static final String QUERIES_XML_PATH = "../queries/topics_MB1-49.xml";
     private static final String XML_HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n";
@@ -29,9 +37,35 @@ public class XMLParser {
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }
+        
+        queries = new ArrayList<Entry<String, String>>();
+        
+        this.fillQueries();
     }
     
-    public void createXMLFromQueriesFile() throws IOException {
+    private void fillQueries() {
+        try {
+            XMLParser.createXMLFromQueriesFile();
+            
+            Document doc = this.docBuilder.parse(QUERIES_XML_PATH);
+            doc.getDocumentElement().normalize();
+            
+            NodeList titleList = doc.getElementsByTagName("title");
+            NodeList nameList = doc.getElementsByTagName("num");
+            
+            for (int i = 0; i < titleList.getLength(); i++) {
+                Node title = titleList.item(i);
+                Node name = nameList.item(i);
+                queries.add(new AbstractMap.SimpleEntry<String, String>(name.getTextContent(), title.getTextContent()));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (SAXException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createXMLFromQueriesFile() throws IOException {
         
         InputStream is = null;
         OutputStream os = null;
@@ -57,5 +91,14 @@ public class XMLParser {
             is.close();
             os.close();
         }
+    }
+    
+    public ArrayList<Entry<String, String>> getQueries() {
+        ArrayList<Entry<String, String>> toReturn = new ArrayList<Entry<String, String>>();
+        
+        for (Entry<String, String> entry : this.queries) {
+            toReturn.add(new AbstractMap.SimpleEntry<String, String>(entry.getKey(), entry.getValue()));
+        }
+        return this.queries;
     }
 }

@@ -12,3 +12,6 @@ bin/Indexer.class
 *.class
 
 bin/Indexer.class
+/bin
+
+*.class
