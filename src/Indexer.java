@@ -14,8 +14,6 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -35,6 +33,7 @@ import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.MultiTermQuery;
 import org.apache.lucene.search.Query;
@@ -51,7 +50,7 @@ public class Indexer {
 	private static final Version	LUCENE_VERSION		= Version.LUCENE_46;
 	private static final String		STOP_WORDS_PATH 	= "../collection/StopWords.txt";
 	private static final String 	INPUT_INDEX_PATH 	= "../collection/Trec_microblog11.txt";
-	private static final String 	OUTPUT_INDEX_PATH 	= "../index";
+	private static final String 	OUTPUT_INDEX_PATH 	= "../idx";
 	private static final String 	OUTPUT_RESULTS_PATH	= "../queries/results.txt";
 	
 	// Index manipulation objects
@@ -111,6 +110,10 @@ public class Indexer {
 		indexConfig 	= new IndexWriterConfig(LUCENE_VERSION, analyzer); 
 		indexWriter 	= new IndexWriter(outputDir, indexConfig);
 
+		
+		// Start timer before indexing starts
+		long startTime = System.nanoTime();
+
 		// Read index input file
 		String line;
 		while ( (line = br.readLine()) != null ) {
@@ -131,16 +134,24 @@ public class Indexer {
 			indexWriter.updateDocument(new Term("tweetId", tweetId), doc);
 		}
 
+		// End timer when idexing is done
+		long endTime = System.nanoTime();
+
+		long duration = endTime - startTime;
+		
+		// Close indexWriter
+		indexWriter.close();
+		
 		// Initialize indexReader when output directory is still open
+//		outputDir.mkdirs(); // TODO
 		indexReader  = DirectoryReader.open(outputDir);
 
 		// Close resources
-		indexWriter.close();
 		outputDir.close();		
 		br.close();
 
 		// Status report
-		System.out.println("Index created with " + indexReader.numDocs() + " documents");
+		System.out.println("Index created with " + indexReader.numDocs() + " documents in " + duration + " nanoseconds");
 	}
 	
 	/*
@@ -159,14 +170,7 @@ public class Indexer {
 		
 		resultsInit();
 		
-		// TODO for testing until phrasal search is complete
-		Map<String, String> qs = new HashMap<String, String>();
-		qs.put("1", "BBC World Service staff cuts");
-		qs.put("49", "carbon monoxide law");
-		
-		for (Map.Entry<String, String> q : qs.entrySet()) {
-
-//		for (Entry<String, String> q : queries) {
+		for (Entry<String, String> q : queries) {
 		    String 	queryName 	= q.getKey();	
 		    String	queryText	= q.getValue();
 			String[][] results 	= searchIndex(queryText);
@@ -193,29 +197,27 @@ public class Indexer {
 		// To avoid getting a constant score of 1.0 from using wildcards
 		queryParser.setMultiTermRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE); 
 		
+		// To avoid "TooManyClauses exception"
+		BooleanQuery.setMaxClauseCount((int) Integer.MAX_VALUE);
+					
 		// Wraps every term in the query with wildcards
 		Query query = queryParser.parse("*"+searchString+"*");
-
+		
 		// TODO scores changed from 4.something to 0~0.5 when added wildcard - run trekeval to check this
+
 		// Run query and get result stats
-		TopDocs 	results = indexSearcher.search(query, indexReader.numDocs());
+		TopDocs results = indexSearcher.search(query, indexReader.numDocs());
 		ScoreDoc[] 	hits 	= results.scoreDocs;	    
 	    int			numHits = results.totalHits;
 	    String[][]	hitsInfo = new String[ Math.min(numHits, 1000) ][3];
 	    
 	    // Gather doc and score information for a max of 1000 results
-	    for (int i = 0; i < hitsInfo.length; i++) { //=Math.max(1, hits.length-1))
-	    	ScoreDoc hit = hits[i];
-	    	
-    		Document doc = indexSearcher.doc(hit.doc);
-    		String tweetId  = doc.get("tweetId");
-//	    		String message 	= doc.get("message");
-          	String rank 	= Integer.toString(i+1);
-          	String score	= Float.toString(hit.score);
-      		
-      		hitsInfo[i][0] = tweetId;
-      		hitsInfo[i][1] = rank;
-      		hitsInfo[i][2] = score;
+	    for (int i = 0; i < hitsInfo.length; i++) { 
+    		Document doc = indexSearcher.doc(hits[i].doc);
+
+      		hitsInfo[i][0] = doc.get("tweetId");			// docno
+      		hitsInfo[i][1] = Integer.toString(i+1);			// rank
+      		hitsInfo[i][2] = Float.toString(hits[i].score); // score
           		
 //	    	if ( i == 0 || i == hits.length-1 ) {
 //	    		System.out.print((i==0) ? "First " : "Last " + " match \t-\t");   		

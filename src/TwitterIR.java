@@ -20,7 +20,7 @@ public class TwitterIR {
 			// TODO
 			
 			// Verify indexing and report
-//			indexer.indexStats();
+			indexer.indexStats();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
