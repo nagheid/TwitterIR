@@ -2,15 +2,9 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-<<<<<<< HEAD
 	<classpathentry kind="lib" path="C:/Users/Nagla/Dropbox/Winter 2014/CSI4107/Assignments/A1/Tools/lucene-4.6.0/core/lucene-core-4.6.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Nagla/Dropbox/Winter 2014/CSI4107/Assignments/A1/Tools/lucene-4.6.0/analysis/common/lucene-analyzers-common-4.6.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Nagla/Dropbox/Winter 2014/CSI4107/Assignments/A1/Tools/lucene-4.6.0/demo/lucene-demo-4.6.0.jar"/>
 	<classpathentry kind="lib" path="C:/Users/Nagla/Dropbox/Winter 2014/CSI4107/Assignments/A1/Tools/lucene-4.6.0/queryparser/lucene-queryparser-4.6.0.jar"/>
-=======
-	<classpathentry kind="lib" path="/usr/local/lucene-4.6.1/build/analysis/common/lucene-analyzers-common-4.6-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/usr/local/lucene-4.6.1/build/core/lucene-core-4.6-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/usr/local/lucene-4.6.1/build/queryparser/lucene-queryparser-4.6-SNAPSHOT.jar"/>
->>>>>>> 8d5f5fe4f1f4d129b29c86de76d979126d5bfb7f
 	<classpathentry kind="output" path="bin"/>
 </classpath>

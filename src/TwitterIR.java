@@ -13,12 +13,9 @@ public class TwitterIR {
 			// Preprocessing and indexing (steps 1 + 2)
 			indexer.init();
 
-			// Retrieval and ranking (step 3)
+			// Retrieval and ranking + results file (step 3 + 4)
 			indexer.searchQueries(queries);
-						
-			// Results file (step 4)
-			// TODO
-			
+
 			// Verify indexing and report
 			indexer.indexStats();
 			
